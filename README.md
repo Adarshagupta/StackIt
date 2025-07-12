@@ -3,7 +3,7 @@
 ## 🏆 Odoo Hackathon Submission
 
 ### 👥 Team Information
-**Team Name:** DevForge  
+**Team Name:** HellScripting  
 **Team Member:**
 - **Name:** Divyansh Arya  
 - **Email:** divyansh_arya@srmap.edu.in  
