@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import MainLayout from '@/components/layouts/MainLayout'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
-import { User, Settings, Shield, Bell, Camera, Edit2, Save, X } from 'lucide-react'
+import { User, Settings, Shield, Edit2, Save, X } from 'lucide-react'
 
 interface ProfileData {
   id: string
@@ -86,8 +86,9 @@ export default function ProfilePage() {
           confirmPassword: ''
         })
       }
-    } catch (error) {
-      console.error('Error fetching profile:', error)
+    } catch {
+      console.error('Failed to fetch profile')
+      setIsLoading(false)
     }
   }
 
@@ -129,9 +130,8 @@ export default function ProfilePage() {
       } else {
         setErrors({ general: data.message || 'Failed to update profile' })
       }
-    } catch (error) {
-      setErrors({ general: 'An error occurred while updating profile' })
-    } finally {
+    } catch {
+      console.error('Failed to update profile')
       setIsLoading(false)
     }
   }

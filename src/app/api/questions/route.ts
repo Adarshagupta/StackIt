@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { withAuth, withOptionalAuth, AuthenticatedRequest, createSuccessResponse, createErrorResponse, createPaginatedResponse } from '@/lib/middleware'
-import { questionSchema, searchSchema } from '@/lib/validations'
+import { withAuth, AuthenticatedRequest, createSuccessResponse, createErrorResponse } from '@/lib/middleware'
+import { questionSchema } from '@/lib/validations'
 import { ZodError } from 'zod'
+import { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,16 +17,14 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit
     
     // Build where clause
-    let where: any = {}
+    const where: Prisma.QuestionWhereInput = {}
     
     // Apply search filter
     if (search) {
-      where = {
-        OR: [
-          { title: { contains: search, mode: 'insensitive' } },
-          { content: { contains: search, mode: 'insensitive' } }
-        ]
-      }
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } }
+      ]
     }
     
     // Apply filter conditions
@@ -36,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Define sort order
-    let orderBy: any = { createdAt: 'desc' }
+    let orderBy: Prisma.QuestionOrderByWithRelationInput = { createdAt: 'desc' }
     
     switch (sort) {
       case 'newest':
@@ -99,14 +98,14 @@ export async function GET(request: NextRequest) {
 
     // Calculate actual vote counts
     const questionsWithVotes = await Promise.all(
-      questions.map(async (question: any) => {
+      questions.map(async (question) => {
         const votes = await db.vote.findMany({
           where: { questionId: question.id },
           select: { type: true }
         })
         
-        const upVotes = votes.filter((vote: any) => vote.type === 'UP').length
-        const downVotes = votes.filter((vote: any) => vote.type === 'DOWN').length
+        const upVotes = votes.filter((vote) => vote.type === 'UP').length
+        const downVotes = votes.filter((vote) => vote.type === 'DOWN').length
         const voteCount = upVotes - downVotes
         
         return {
@@ -163,7 +162,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Create question with transaction
-      const question = await db.$transaction(async (tx: any) => {
+      const question = await db.$transaction(async (tx) => {
         const newQuestion = await tx.question.create({
           data: {
             title: validatedData.title,
@@ -216,7 +215,10 @@ export async function POST(request: NextRequest) {
       console.error('Create question error:', error)
       
       if (error instanceof ZodError) {
-        return createErrorResponse('Invalid question data', 400)
+        return createErrorResponse(
+          'Validation failed',
+          400
+        )
       }
       
       return createErrorResponse('Failed to create question')

@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { clearAuthCookie } from '@/lib/auth'
+import { createErrorResponse } from '@/lib/middleware'
 
 export async function POST(request: NextRequest) {
   try {
-    const response = NextResponse.json({ success: true })
-    clearAuthCookie(response)
+    // Since we're using JWT tokens stored in localStorage on the client side,
+    // we don't need to do anything server-side for logout
+    // The client handles token removal
     
-    return response
+    return NextResponse.json({ 
+      message: 'Logged out successfully' 
+    }, { status: 200 })
   } catch (error) {
-    console.error('Error during logout:', error)
-    return NextResponse.json(
-      { error: 'Failed to logout' },
-      { status: 500 }
-    )
+    console.error('Logout error:', error)
+    return createErrorResponse('Failed to logout')
   }
 } 

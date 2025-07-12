@@ -1,15 +1,14 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
-import { withAuth, withOptionalAuth, AuthenticatedRequest, createSuccessResponse, createErrorResponse, requireOwnership } from '@/lib/middleware'
-import { answerSchema } from '@/lib/validations'
-import { ZodError } from 'zod'
+import { withAuth, AuthenticatedRequest, createSuccessResponse, createErrorResponse } from '@/lib/middleware'
+import { Prisma } from '@prisma/client'
 
 // GET /api/answers/[id] - Get answer by ID
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withOptionalAuth(request, async (req: AuthenticatedRequest) => {
+  return withAuth(request, async (req: AuthenticatedRequest) => {
     try {
       const answerId = params.id
       
@@ -107,12 +106,19 @@ export async function PUT(
         return createErrorResponse('Answer must be less than 10,000 characters', 400)
       }
       
-      // Get existing answer
       const existingAnswer = await db.answer.findUnique({
         where: { id: answerId },
-        select: {
-          id: true,
-          authorId: true
+        include: {
+          author: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+              role: true
+            }
+          }
         }
       })
       
@@ -121,14 +127,17 @@ export async function PUT(
       }
       
       // Check ownership
-      if (!requireOwnership(req.user!.id, existingAnswer.authorId, req.user!.role)) {
+      if (req.user!.id !== existingAnswer.authorId) {
         return createErrorResponse('Not authorized to update this answer', 403)
       }
       
       // Update answer
-      const answer = await db.answer.update({
+      const updatedAnswer = await db.answer.update({
         where: { id: answerId },
-        data: { content },
+        data: {
+          content: content,
+          updatedAt: new Date()
+        },
         include: {
           author: {
             select: {
@@ -159,8 +168,7 @@ export async function PUT(
         }
       })
       
-      return createSuccessResponse(answer, 'Answer updated successfully')
-      
+      return createSuccessResponse(updatedAnswer, 'Answer updated successfully')
     } catch (error) {
       console.error('Update answer error:', error)
       return createErrorResponse('Failed to update answer')
@@ -177,7 +185,6 @@ export async function DELETE(
     try {
       const answerId = params.id
       
-      // Get existing answer
       const existingAnswer = await db.answer.findUnique({
         where: { id: answerId },
         select: {
@@ -192,28 +199,23 @@ export async function DELETE(
       }
       
       // Check ownership
-      if (!requireOwnership(req.user!.id, existingAnswer.authorId, req.user!.role)) {
+      if (req.user!.id !== existingAnswer.authorId) {
         return createErrorResponse('Not authorized to delete this answer', 403)
       }
       
-      // Delete answer with transaction
-      await db.$transaction(async (tx: any) => {
+      // Delete answer and decrement question answer count
+      await db.$transaction(async (tx: Prisma.TransactionClient) => {
         await tx.answer.delete({
           where: { id: answerId }
         })
         
-        // Update question answer count
         await tx.question.update({
           where: { id: existingAnswer.questionId },
           data: { answerCount: { decrement: 1 } }
         })
       })
       
-      return createSuccessResponse(
-        { id: answerId },
-        'Answer deleted successfully'
-      )
-      
+      return createSuccessResponse(null, 'Answer deleted successfully')
     } catch (error) {
       console.error('Delete answer error:', error)
       return createErrorResponse('Failed to delete answer')

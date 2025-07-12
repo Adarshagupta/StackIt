@@ -1,4 +1,9 @@
-import { ServerIO } from '@/pages/api/socket'
+import { Server as ServerIO } from 'socket.io'
+
+// Extend global type to include io
+declare global {
+  var io: ServerIO | undefined
+}
 
 // Global variable to store the Socket.IO instance
 let io: ServerIO | null = null
@@ -7,12 +12,18 @@ export const setSocketIO = (socketIO: ServerIO) => {
   io = socketIO
 }
 
-export const getSocketIO = () => io
+export const getSocketIO = (): ServerIO | null => {
+  // Try to get from global first (for custom server setup)
+  if (global.io) {
+    return global.io
+  }
+  return io
+}
 
 // Event types for WebSocket messages
 export interface WebSocketEvent {
   type: 'VOTE_UPDATE' | 'NEW_ANSWER' | 'ANSWER_ACCEPTED' | 'QUESTION_UPDATED' | 'ANSWER_UPDATED' | 'QUESTION_DELETED' | 'ANSWER_DELETED'
-  payload: any
+  payload: unknown
   timestamp: Date
 }
 
@@ -23,7 +34,8 @@ export const broadcastVoteUpdate = (questionId: string, data: {
   voteCount: number
   userVote: 'UP' | 'DOWN' | null
 }) => {
-  if (!io) return
+  const socketIO = getSocketIO()
+  if (!socketIO) return
 
   const event: WebSocketEvent = {
     type: 'VOTE_UPDATE',
@@ -32,14 +44,15 @@ export const broadcastVoteUpdate = (questionId: string, data: {
   }
 
   // Broadcast to question-specific room
-  io.to(`question-${questionId}`).emit('vote-update', event)
+  socketIO.to(`question-${questionId}`).emit('vote-update', event)
   
   // Also broadcast to global room for homepage updates
-  io.to('global').emit('vote-update', event)
+  socketIO.to('global').emit('vote-update', event)
 }
 
-export const broadcastNewAnswer = (questionId: string, answer: any) => {
-  if (!io) return
+export const broadcastNewAnswer = (questionId: string, answer: unknown) => {
+  const socketIO = getSocketIO()
+  if (!socketIO) return
 
   const event: WebSocketEvent = {
     type: 'NEW_ANSWER',
@@ -48,17 +61,18 @@ export const broadcastNewAnswer = (questionId: string, answer: any) => {
   }
 
   // Broadcast to question-specific room
-  io.to(`question-${questionId}`).emit('new-answer', event)
+  socketIO.to(`question-${questionId}`).emit('new-answer', event)
   
   // Also broadcast to global room
-  io.to('global').emit('new-answer', event)
+  socketIO.to('global').emit('new-answer', event)
 }
 
 export const broadcastAnswerAccepted = (questionId: string, data: {
   answerId: string
   isAccepted: boolean
 }) => {
-  if (!io) return
+  const socketIO = getSocketIO()
+  if (!socketIO) return
 
   const event: WebSocketEvent = {
     type: 'ANSWER_ACCEPTED',
@@ -67,11 +81,12 @@ export const broadcastAnswerAccepted = (questionId: string, data: {
   }
 
   // Broadcast to question-specific room
-  io.to(`question-${questionId}`).emit('answer-accepted', event)
+  socketIO.to(`question-${questionId}`).emit('answer-accepted', event)
 }
 
-export const broadcastQuestionUpdated = (questionId: string, question: any) => {
-  if (!io) return
+export const broadcastQuestionUpdated = (questionId: string, question: unknown) => {
+  const socketIO = getSocketIO()
+  if (!socketIO) return
 
   const event: WebSocketEvent = {
     type: 'QUESTION_UPDATED',
@@ -80,14 +95,15 @@ export const broadcastQuestionUpdated = (questionId: string, question: any) => {
   }
 
   // Broadcast to question-specific room
-  io.to(`question-${questionId}`).emit('question-updated', event)
+  socketIO.to(`question-${questionId}`).emit('question-updated', event)
   
   // Also broadcast to global room
-  io.to('global').emit('question-updated', event)
+  socketIO.to('global').emit('question-updated', event)
 }
 
-export const broadcastAnswerUpdated = (questionId: string, answer: any) => {
-  if (!io) return
+export const broadcastAnswerUpdated = (questionId: string, answer: unknown) => {
+  const socketIO = getSocketIO()
+  if (!socketIO) return
 
   const event: WebSocketEvent = {
     type: 'ANSWER_UPDATED',
@@ -96,11 +112,12 @@ export const broadcastAnswerUpdated = (questionId: string, answer: any) => {
   }
 
   // Broadcast to question-specific room
-  io.to(`question-${questionId}`).emit('answer-updated', event)
+  socketIO.to(`question-${questionId}`).emit('answer-updated', event)
 }
 
 export const broadcastQuestionDeleted = (questionId: string) => {
-  if (!io) return
+  const socketIO = getSocketIO()
+  if (!socketIO) return
 
   const event: WebSocketEvent = {
     type: 'QUESTION_DELETED',
@@ -109,14 +126,15 @@ export const broadcastQuestionDeleted = (questionId: string) => {
   }
 
   // Broadcast to question-specific room
-  io.to(`question-${questionId}`).emit('question-deleted', event)
+  socketIO.to(`question-${questionId}`).emit('question-deleted', event)
   
   // Also broadcast to global room
-  io.to('global').emit('question-deleted', event)
+  socketIO.to('global').emit('question-deleted', event)
 }
 
 export const broadcastAnswerDeleted = (questionId: string, answerId: string) => {
-  if (!io) return
+  const socketIO = getSocketIO()
+  if (!socketIO) return
 
   const event: WebSocketEvent = {
     type: 'ANSWER_DELETED',
@@ -125,5 +143,5 @@ export const broadcastAnswerDeleted = (questionId: string, answerId: string) => 
   }
 
   // Broadcast to question-specific room
-  io.to(`question-${questionId}`).emit('answer-deleted', event)
+  socketIO.to(`question-${questionId}`).emit('answer-deleted', event)
 } 

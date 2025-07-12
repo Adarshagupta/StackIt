@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/tags - Create a new tag
 export async function POST(request: NextRequest) {
-  return withAuth(request, async (req: AuthenticatedRequest) => {
+  return withAuth(request, async () => {
     try {
       const body = await request.json()
       const { name, description, color } = body

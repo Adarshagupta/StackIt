@@ -7,8 +7,8 @@ export default function MessagesPage() {
       <div className="max-w-6xl mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Messages</h1>
-          <p className="text-gray-400">
-            Connect with other developers and continue your conversations.
+          <p className="text-gray-500 mb-6 max-w-2xl">
+            Connect with fellow developers, share knowledge, and build your network. This feature isn&apos;t available yet, but it&apos;s coming soon!
           </p>
         </div>
 

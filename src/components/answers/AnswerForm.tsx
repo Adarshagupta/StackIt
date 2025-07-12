@@ -12,7 +12,7 @@ interface AnswerFormProps {
 }
 
 export default function AnswerForm({ questionId, onAnswerSubmitted }: AnswerFormProps) {
-  const { user, isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuth()
   const router = useRouter()
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -69,7 +69,7 @@ export default function AnswerForm({ questionId, onAnswerSubmitted }: AnswerForm
       } else {
         setError(data.message || 'Failed to post answer')
       }
-    } catch (error) {
+    } catch (err) {
       setError('An error occurred. Please try again.')
     } finally {
       setIsSubmitting(false)

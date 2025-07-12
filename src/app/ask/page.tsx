@@ -227,7 +227,7 @@ export default function AskQuestionPage() {
               Title
             </label>
             <p className="text-sm text-gray-500 mb-2">
-              Be specific and imagine you're asking a question to another person.
+              Be specific and imagine you&apos;re asking a question to another person.
             </p>
             <input
               id="title"
@@ -252,7 +252,7 @@ export default function AskQuestionPage() {
               Include all the information someone would need to answer your question. Use the rich text editor to format your content.
             </p>
             <RichTextEditor
-              placeholder="Describe your problem in detail. Include what you've tried, what you expected to happen, and what actually happened. Use formatting, code blocks, and links to make your question clear."
+              placeholder="Describe your problem in detail. Include what you&apos;ve tried, what you expected to happen, and what actually happened. Use formatting, code blocks, and links to make your question clear."
               initialValue={formData.content}
               onChange={handleContentChange}
               minHeight="300px"
@@ -325,7 +325,7 @@ export default function AskQuestionPage() {
                       onClick={() => handleCreateTag(cleanTagInput)}
                       className="w-full px-3 py-2 text-left text-white hover:bg-gray-700 flex items-center justify-between border-t border-gray-600"
                     >
-                      <span>Create "{cleanTagInput}"</span>
+                      <span>Create &quot;{cleanTagInput}&quot;</span>
                       <Plus className="h-4 w-4 text-green-400" />
                     </button>
                   )}
@@ -348,7 +348,7 @@ export default function AskQuestionPage() {
               <li>• Summarize the problem in the title</li>
               <li>• Use the rich text editor to format your content clearly</li>
               <li>• Include code examples, links, and images as needed</li>
-              <li>• Describe what you've tried and what you expected</li>
+              <li>• Describe what you&apos;ve tried and what you expected</li>
               <li>• Add relevant tags to help others find your question</li>
               <li>• Review your question before posting</li>
             </ul>

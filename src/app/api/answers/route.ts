@@ -4,6 +4,7 @@ import { withAuth, AuthenticatedRequest, createSuccessResponse, createErrorRespo
 import { answerSchema } from '@/lib/validations'
 import { ZodError } from 'zod'
 import { broadcastNewAnswer } from '@/lib/websocket'
+import { Prisma } from '@prisma/client'
 
 // POST /api/answers - Create a new answer
 export async function POST(request: NextRequest) {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Create answer with transaction
-      const answer = await db.$transaction(async (tx: any) => {
+      const answer = await db.$transaction(async (tx: Prisma.TransactionClient) => {
         const newAnswer = await tx.answer.create({
           data: {
             content,

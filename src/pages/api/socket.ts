@@ -2,7 +2,6 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { Server as ServerIO } from 'socket.io'
 import { Server as NetServer } from 'http'
 import { Socket as NetSocket } from 'net'
-import { setSocketIO } from '@/lib/websocket'
 
 interface SocketServer extends NetServer {
   io?: ServerIO | undefined
@@ -37,7 +36,9 @@ export default async function handler(
   })
 
   res.socket.server.io = io
-  setSocketIO(io)
+  
+  // Store the IO instance globally so it can be accessed by other API routes
+  global.io = io
 
   io.on('connection', (socket) => {
     console.log('Client connected:', socket.id)
@@ -67,6 +68,4 @@ export default async function handler(
 
   console.log('Socket.IO server started')
   res.end()
-}
-
-export { type ServerIO } 
+} 

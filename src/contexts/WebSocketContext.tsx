@@ -2,27 +2,27 @@
 
 import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { io, Socket } from 'socket.io-client'
-import { useAuth } from '@/contexts/AuthContext'
 
 interface WebSocketEvent {
   type: 'VOTE_UPDATE' | 'NEW_ANSWER' | 'ANSWER_ACCEPTED' | 'QUESTION_UPDATED' | 'ANSWER_UPDATED' | 'QUESTION_DELETED' | 'ANSWER_DELETED'
-  payload: any
+  payload: unknown
   timestamp: Date
 }
 
 interface WebSocketContextType {
   socket: Socket | null
   isConnected: boolean
+  connectionError: string | null
   joinQuestion: (questionId: string) => void
   leaveQuestion: (questionId: string) => void
   joinGlobal: () => void
-  onVoteUpdate: (callback: (event: WebSocketEvent) => void) => void
-  onNewAnswer: (callback: (event: WebSocketEvent) => void) => void
-  onAnswerAccepted: (callback: (event: WebSocketEvent) => void) => void
-  onQuestionUpdated: (callback: (event: WebSocketEvent) => void) => void
-  onAnswerUpdated: (callback: (event: WebSocketEvent) => void) => void
-  onQuestionDeleted: (callback: (event: WebSocketEvent) => void) => void
-  onAnswerDeleted: (callback: (event: WebSocketEvent) => void) => void
+  onVoteUpdate: (callback: (event: WebSocketEvent) => void) => () => void
+  onNewAnswer: (callback: (event: WebSocketEvent) => void) => () => void
+  onAnswerAccepted: (callback: (event: WebSocketEvent) => void) => () => void
+  onQuestionUpdated: (callback: (event: WebSocketEvent) => void) => () => void
+  onAnswerUpdated: (callback: (event: WebSocketEvent) => void) => () => void
+  onQuestionDeleted: (callback: (event: WebSocketEvent) => void) => () => void
+  onAnswerDeleted: (callback: (event: WebSocketEvent) => void) => () => void
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined)
@@ -40,9 +40,9 @@ interface WebSocketProviderProps {
 }
 
 export function WebSocketProvider({ children }: WebSocketProviderProps) {
-  const { isAuthenticated } = useAuth()
   const [socket, setSocket] = useState<Socket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
   const eventCallbacks = useRef<{
     voteUpdate: ((event: WebSocketEvent) => void)[]
     newAnswer: ((event: WebSocketEvent) => void)[]
@@ -65,23 +65,58 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     // Initialize WebSocket connection
     const initializeSocket = async () => {
       try {
-        // First, initialize the Socket.IO server
-        await fetch('/api/socket')
+        console.log('Initializing WebSocket connection...')
+        
+        // Wait a bit for the server to start (if needed)
+        await new Promise(resolve => setTimeout(resolve, 500))
         
         // Then connect to it
         const newSocket = io({
           path: '/api/socket',
-          transports: ['websocket', 'polling']
+          transports: ['websocket', 'polling'],
+          timeout: 20000,
+          autoConnect: true,
+          reconnection: true,
+          reconnectionAttempts: 5,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
         })
 
         newSocket.on('connect', () => {
-          console.log('WebSocket connected')
+          console.log('WebSocket connected:', newSocket.id)
           setIsConnected(true)
+          setConnectionError(null)
         })
 
-        newSocket.on('disconnect', () => {
-          console.log('WebSocket disconnected')
+        newSocket.on('disconnect', (reason) => {
+          console.log('WebSocket disconnected:', reason)
           setIsConnected(false)
+          if (reason === 'io server disconnect') {
+            // Server disconnected, try to reconnect
+            newSocket.connect()
+          }
+        })
+
+        newSocket.on('connect_error', (error) => {
+          console.error('WebSocket connection error:', error)
+          setConnectionError(`Connection failed: ${error.message}`)
+          setIsConnected(false)
+        })
+
+        newSocket.on('reconnect', (attemptNumber) => {
+          console.log('WebSocket reconnected after', attemptNumber, 'attempts')
+          setIsConnected(true)
+          setConnectionError(null)
+        })
+
+        newSocket.on('reconnect_error', (error) => {
+          console.error('WebSocket reconnection error:', error)
+          setConnectionError(`Reconnection failed: ${error.message}`)
+        })
+
+        newSocket.on('reconnect_failed', () => {
+          console.error('WebSocket reconnection failed')
+          setConnectionError('Unable to reconnect to server')
         })
 
         // Set up event listeners
@@ -116,6 +151,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
         setSocket(newSocket)
       } catch (error) {
         console.error('Failed to initialize WebSocket:', error)
+        setConnectionError(`Failed to initialize WebSocket: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     }
 
@@ -123,6 +159,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
 
     return () => {
       if (socket) {
+        console.log('Cleaning up WebSocket connection')
         socket.disconnect()
       }
     }
@@ -203,23 +240,24 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     }
   }
 
-  const value = {
-    socket,
-    isConnected,
-    joinQuestion,
-    leaveQuestion,
-    joinGlobal,
-    onVoteUpdate,
-    onNewAnswer,
-    onAnswerAccepted,
-    onQuestionUpdated,
-    onAnswerUpdated,
-    onQuestionDeleted,
-    onAnswerDeleted
-  }
-
   return (
-    <WebSocketContext.Provider value={value}>
+    <WebSocketContext.Provider
+      value={{
+        socket,
+        isConnected,
+        connectionError,
+        joinQuestion,
+        leaveQuestion,
+        joinGlobal,
+        onVoteUpdate,
+        onNewAnswer,
+        onAnswerAccepted,
+        onQuestionUpdated,
+        onAnswerUpdated,
+        onQuestionDeleted,
+        onAnswerDeleted
+      }}
+    >
       {children}
     </WebSocketContext.Provider>
   )

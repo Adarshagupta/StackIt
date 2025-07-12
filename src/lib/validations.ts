@@ -36,7 +36,7 @@ export const questionSchema = z.object({
     .max(150, 'Title must be less than 150 characters'),
   content: z.string()
     .min(20, 'Content must be at least 20 characters')
-    .max(10000, 'Content must be less than 10,000 characters'),
+    .max(50000, 'Content must be less than 50,000 characters'), // Increased limit for HTML content
   tags: z.array(z.string())
     .min(1, 'At least one tag is required')
     .max(5, 'Maximum 5 tags allowed')
@@ -52,7 +52,7 @@ export const updateQuestionSchema = z.object({
     .optional(),
   content: z.string()
     .min(20, 'Content must be at least 20 characters')
-    .max(10000, 'Content must be less than 10,000 characters')
+    .max(50000, 'Content must be less than 50,000 characters') // Increased limit for HTML content
     .optional(),
   tags: z.array(z.string())
     .min(1, 'At least one tag is required')
@@ -67,7 +67,7 @@ export const updateQuestionSchema = z.object({
 export const answerSchema = z.object({
   content: z.string()
     .min(20, 'Answer must be at least 20 characters')
-    .max(10000, 'Answer must be less than 10,000 characters'),
+    .max(50000, 'Answer must be less than 50,000 characters'), // Increased limit for HTML content
   questionId: z.string().min(1, 'Question ID is required')
 })
 
