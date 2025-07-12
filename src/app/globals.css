@@ -1,26 +1,338 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: light-dark(#ffffff, #0f172a);
+  --color-foreground: light-dark(#0f172a, #f8fafc);
+  --color-card: light-dark(#ffffff, #1e293b);
+  --color-card-foreground: light-dark(#0f172a, #f8fafc);
+  --color-popover: light-dark(#ffffff, #1e293b);
+  --color-popover-foreground: light-dark(#0f172a, #f8fafc);
+  --color-primary: light-dark(#3b82f6, #60a5fa);
+  --color-primary-foreground: light-dark(#ffffff, #1e293b);
+  --color-secondary: light-dark(#f1f5f9, #334155);
+  --color-secondary-foreground: light-dark(#0f172a, #f8fafc);
+  --color-muted: light-dark(#f1f5f9, #334155);
+  --color-muted-foreground: light-dark(#64748b, #94a3b8);
+  --color-accent: light-dark(#f1f5f9, #334155);
+  --color-accent-foreground: light-dark(#0f172a, #f8fafc);
+  --color-destructive: light-dark(#ef4444, #dc2626);
+  --color-destructive-foreground: light-dark(#ffffff, #f8fafc);
+  --color-border: light-dark(#e2e8f0, #475569);
+  --color-input: light-dark(#e2e8f0, #475569);
+  --color-ring: light-dark(#3b82f6, #60a5fa);
+  --radius: 0.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-feature-settings: "rlig" 1, "calt" 1;
 }
+
+/* Custom utility classes */
+.bg-background {
+  background-color: var(--color-background);
+}
+
+.bg-card {
+  background-color: var(--color-card);
+}
+
+.bg-popover {
+  background-color: var(--color-popover);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.bg-secondary {
+  background-color: var(--color-secondary);
+}
+
+.bg-muted {
+  background-color: var(--color-muted);
+}
+
+.bg-accent {
+  background-color: var(--color-accent);
+}
+
+.bg-destructive {
+  background-color: var(--color-destructive);
+}
+
+.text-foreground {
+  color: var(--color-foreground);
+}
+
+.text-card-foreground {
+  color: var(--color-card-foreground);
+}
+
+.text-popover-foreground {
+  color: var(--color-popover-foreground);
+}
+
+.text-primary-foreground {
+  color: var(--color-primary-foreground);
+}
+
+.text-secondary-foreground {
+  color: var(--color-secondary-foreground);
+}
+
+.text-muted-foreground {
+  color: var(--color-muted-foreground);
+}
+
+.text-accent-foreground {
+  color: var(--color-accent-foreground);
+}
+
+.text-destructive-foreground {
+  color: var(--color-destructive-foreground);
+}
+
+.border-border {
+  border-color: var(--color-border);
+}
+
+.border-input {
+  border-color: var(--color-input);
+}
+
+.ring-ring {
+  --tw-ring-color: var(--color-ring);
+}
+
+.skeleton {
+  background-color: var(--color-muted);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  border-radius: 0.25rem;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-foreground);
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Loading animations */
+.loading-dots {
+  display: inline-block;
+}
+
+.loading-dots::after {
+  content: '';
+  animation: dots 1.5s infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
+
+/* Skeleton loading */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+.skeleton-text {
+  background-color: var(--color-muted);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  height: 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* Toast notifications */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+.toast-success {
+  background-color: #10b981;
+  border: 1px solid #059669;
+}
+
+.toast-error {
+  background-color: #ef4444;
+  border: 1px solid #dc2626;
+}
+
+.toast-warning {
+  background-color: #f59e0b;
+  border: 1px solid #d97706;
+}
+
+.toast-info {
+  background-color: #3b82f6;
+  border: 1px solid #2563eb;
+}
+
+/* Tag styles */
+.tag {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.tag-default {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+.tag-javascript {
+  background-color: #f7df1e;
+  color: #000;
+}
+
+.tag-typescript {
+  background-color: #3178c6;
+  color: #fff;
+}
+
+.tag-react {
+  background-color: #61dafb;
+  color: #000;
+}
+
+.tag-nextjs {
+  background-color: #000;
+  color: #fff;
+}
+
+.tag-nodejs {
+  background-color: #339933;
+  color: #fff;
+}
+
+.tag-prisma {
+  background-color: #2d3748;
+  color: #fff;
+}
+
+/* Vote buttons */
+.vote-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background-color: transparent;
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vote-button.upvote {
+  border-color: #22c55e;
+}
+
+.vote-button.upvote.active {
+  background-color: #22c55e;
+  color: white;
+}
+
+.vote-button.downvote {
+  border-color: #ef4444;
+}
+
+.vote-button.downvote.active {
+  background-color: #ef4444;
+  color: white;
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .toast {
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+}
+

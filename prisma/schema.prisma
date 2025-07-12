@@ -1,0 +1,258 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  GUEST
+  USER
+  ADMIN
+}
+
+enum NotificationType {
+  NEW_ANSWER
+  NEW_COMMENT
+  MENTION
+  VOTE
+  QUESTION_ACCEPTED
+}
+
+enum VoteType {
+  UP
+  DOWN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  firstName String?
+  lastName  String?
+  avatar    String?
+  bio       String?
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  questions           Question[]
+  answers             Answer[]
+  votes               Vote[]
+  notifications       Notification[]
+  sentNotifications   Notification[] @relation("NotificationSender")
+  comments            Comment[]
+  questionViews       QuestionView[]
+  reportedContent     Report[]       @relation("ReportedBy")
+  moderatedContent    Report[]       @relation("ModeratedBy")
+
+  @@map("users")
+}
+
+model Question {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  isAnswered  Boolean  @default(false)
+  viewCount   Int      @default(0)
+  voteCount   Int      @default(0)
+  answerCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign Keys
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Relations
+  answers       Answer[]
+  votes         Vote[]
+  tags          QuestionTag[]
+  comments      Comment[]
+  notifications Notification[]
+  views         QuestionView[]
+  reports       Report[]
+
+  @@map("questions")
+}
+
+model Answer {
+  id        String   @id @default(cuid())
+  content   String
+  isAccepted Boolean  @default(false)
+  voteCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign Keys
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Relations
+  votes         Vote[]
+  comments      Comment[]
+  notifications Notification[]
+  reports       Report[]
+
+  @@map("answers")
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  color       String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  questions QuestionTag[]
+
+  @@map("tags")
+}
+
+model QuestionTag {
+  id String @id @default(cuid())
+
+  // Foreign Keys
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tagId      String
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, tagId])
+  @@map("question_tags")
+}
+
+model Vote {
+  id   String   @id @default(cuid())
+  type VoteType
+
+  // Foreign Keys
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Polymorphic relations (either question or answer)
+  questionId String?
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answerId   String?
+  answer     Answer?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, questionId])
+  @@unique([userId, answerId])
+  @@map("votes")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign Keys
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Polymorphic relations (either question or answer)
+  questionId String?
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answerId   String?
+  answer     Answer?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  // Relations
+  notifications Notification[]
+  reports       Report[]
+
+  @@map("comments")
+}
+
+model Notification {
+  id      String           @id @default(cuid())
+  type    NotificationType
+  title   String
+  message String
+  isRead  Boolean          @default(false)
+  data    Json?
+
+  // Foreign Keys
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderId String?
+  sender   User?  @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+
+  // Polymorphic relations for different notification sources
+  questionId String?
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answerId   String?
+  answer     Answer?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  commentId  String?
+  comment    Comment?  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model QuestionView {
+  id String @id @default(cuid())
+
+  // Foreign Keys
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  viewedAt DateTime @default(now())
+  ipAddress String?
+
+  @@unique([userId, questionId])
+  @@map("question_views")
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  reason    String
+  details   String?
+  status    String   @default("PENDING") // PENDING, REVIEWED, RESOLVED, DISMISSED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign Keys
+  reportedById String
+  reportedBy   User   @relation("ReportedBy", fields: [reportedById], references: [id], onDelete: Cascade)
+  moderatedById String?
+  moderatedBy   User?  @relation("ModeratedBy", fields: [moderatedById], references: [id], onDelete: SetNull)
+
+  // Polymorphic relations for different content types
+  questionId String?
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answerId   String?
+  answer     Answer?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  commentId  String?
+  comment    Comment?  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+model SystemSettings {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  type  String // STRING, NUMBER, BOOLEAN, JSON
+
+  @@map("system_settings")
+}
